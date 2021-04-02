@@ -130,8 +130,8 @@
                     "arn:aws:s3:::*/*aws-glue-*/*",
                     { "Fn::Join": [ "", ["arn:aws:s3:::", { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BucketNameParam" } ]] },
                     { "Fn::Join": [ "", ["arn:aws:s3:::", { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BucketNameParam" },"/*" ]] },
-                    { "Fn::Join": [ "", ["arn:aws:s3:::", { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BlogCodeBucketNameParam" } ]] },
-                    { "Fn::Join": [ "", ["arn:aws:s3:::", { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BlogCodeBucketNameParam" },"/*" ]] }
+                    { "Fn::Join": [ "", ["arn:aws:s3:::", { "Ref" : "BlogCodeBucketNameParam" } ]] },
+                    { "Fn::Join": [ "", ["arn:aws:s3:::", { "Ref" : "BlogCodeBucketNameParam" },"/*" ]] }
                   ]
                 },
                 {

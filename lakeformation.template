@@ -28,8 +28,9 @@
       },
       "BlogCodes3Folder" : {
         "Type" : "String",
+	"Default" : "secure-sensitive-data-blog",
         "ConstraintDescription": "Lowercase letters and numbers only!",
-        "Description" : "Enter s3 bucket folder location where the blog code is uploaded. e.g lakeformation"
+        "Description" : "Enter s3 bucket folder location where the blog code is uploaded. e.g secure-sensitive-data-blog"
       }
     },
     "Mappings": {
