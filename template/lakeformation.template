@@ -1,0 +1,142 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Lake Formation settings template",
+    "Metadata": {
+
+    },
+    "Parameters": {
+      "BucketNameParam" : {
+        "Type" : "String",
+        "AllowedPattern": "[a-z0-9]+",
+        "ConstraintDescription": "Lowercase letters and numbers only!",
+        "Description" : "Enter a bucket name, must only include letters and numbers"
+      },
+      "AnalystPassword":{
+        "Description" : "Set a temporary password for the data lake analyst account. The user will be asked to change this when they log in. Make sure this complys with any password policy you have configured in your account.",
+        "Type" : "String",
+        "NoEcho":true
+      },
+      "AdminPassword":{
+        "Description" : "Set a temporary password for the data lake admin account. The user will be asked to change this when they log in. Make sure this complys with any password policy you have configured in your account.",
+        "Type" : "String",
+        "NoEcho":true
+      },
+      "BlogCodes3Bucket" : {
+        "Type" : "String",
+        "ConstraintDescription": "Lowercase letters and numbers only!",
+        "Description" : "Enter s3 bucket where the blog code is uploaded. e.g securityblog-us-east-1"
+      },
+      "BlogCodes3Folder" : {
+        "Type" : "String",
+        "ConstraintDescription": "Lowercase letters and numbers only!",
+        "Description" : "Enter s3 bucket folder location where the blog code is uploaded. e.g lakeformation"
+      }
+    },
+    "Mappings": {
+
+    },
+    "Conditions": {
+
+    },
+    "Resources": {
+
+      "GlueRoleStack":{
+        "Type" : "AWS::CloudFormation::Stack",
+        "Properties" : {
+          "TemplateURL": { "Fn::Join": [ "", [ "https://", { "Ref": "BlogCodes3Bucket" }, ".s3.amazonaws.com/", { "Ref": "BlogCodes3Folder" }, "/gluerole.template" ] ] },
+          "Parameters":{
+            "BucketNameParam":{"Ref":"BucketNameParam"},
+            "BlogCodeBucketNameParam":{"Ref":"BlogCodes3Bucket"}
+          }
+        }
+      },
+      "KmsKeyStack":{
+        "Type" : "AWS::CloudFormation::Stack",
+        "Properties" : {
+          "TemplateURL": { "Fn::Join": [ "", [ "https://", { "Ref": "BlogCodes3Bucket" }, ".s3.amazonaws.com/", { "Ref": "BlogCodes3Folder" }, "/keys.template" ] ] },
+          "Parameters":{
+            "GlueRoleArnParam":{"Fn::GetAtt":["GlueRoleStack", "Outputs.GlueRoleArn"]},
+            "AnalystArnParam": {"Fn::GetAtt" : [ "IamStack", "Outputs.dataLakeAnalystARN" ]},
+            "AdminArnParam": {"Fn::GetAtt" : [ "IamStack", "Outputs.dataLakeAdminARN" ]}
+          }
+        }
+      },
+      "GlueStack":{
+        "Type" : "AWS::CloudFormation::Stack",
+        "Properties" : {
+          "TemplateURL": { "Fn::Join": [ "", [ "https://", { "Ref": "BlogCodes3Bucket" }, ".s3.amazonaws.com/", { "Ref": "BlogCodes3Folder" }, "/glue.template" ] ] },
+          "Parameters":{
+            "BucketNameParam":{"Ref":"BucketNameParam"},
+            "GlueRoleArnParam":{"Fn::GetAtt":["GlueRoleStack", "Outputs.GlueRoleArn"]},
+            "KMSKeyParam":{"Fn::GetAtt":["KmsKeyStack", "Outputs.KMSKeyArn"]},
+            "BlogCodes3Location":{ "Fn::Join": [ "", [ { "Ref": "BlogCodes3Bucket" }, "/", { "Ref": "BlogCodes3Folder" } ] ] }
+          }
+        }
+      },
+      "IamStack" : {
+        "Type" : "AWS::CloudFormation::Stack",
+        "Properties" : {
+          "TemplateURL": { "Fn::Join": [ "", [ "https://", { "Ref": "BlogCodes3Bucket" }, ".s3.amazonaws.com/", { "Ref": "BlogCodes3Folder" }, "/iam.template" ] ] },
+          "Parameters" : {
+            "AnalystPassword":{"Ref":"AnalystPassword"},
+            "AdminPassword": {"Ref":"AdminPassword"},
+            "GlueRoleArnParam":{"Fn::GetAtt":["GlueRoleStack", "Outputs.GlueRoleArn"]}
+          }
+        }
+      },
+      "BucketStack": {
+         "Type": "AWS::CloudFormation::Stack",
+         "Properties": {
+          "TemplateURL": { "Fn::Join": [ "", [ "https://", { "Ref": "BlogCodes3Bucket" }, ".s3.amazonaws.com/", { "Ref": "BlogCodes3Folder" }, "/bucketstack.template" ] ] },
+          "Parameters": {
+              "BucketNameParam": {"Ref": "BucketNameParam"},
+              "LakeEncryptionKey": {"Fn::GetAtt":["KmsKeyStack", "Outputs.KMSKey"]},
+              "ParentStackName": {"Fn::Sub":"${AWS::StackName}"}
+            }
+          },
+          "DependsOn":"IamStack"
+       },
+       "AthenaStack": {
+          "Type": "AWS::CloudFormation::Stack",
+          "Properties": {
+          "TemplateURL": { "Fn::Join": [ "", [ "https://", { "Ref": "BlogCodes3Bucket" }, ".s3.amazonaws.com/", { "Ref": "BlogCodes3Folder" }, "/athena.template" ] ] },
+          "Parameters": {
+               "AthenaBucketName": {"Fn::GetAtt":["BucketStack", "Outputs.AthenaBucketName"]},
+               "KMSKeyArn":{"Fn::GetAtt":["KmsKeyStack", "Outputs.KMSKeyArn"]}
+             }
+           },
+           "DependsOn":"BucketStack"
+        },
+       "DataLakeSettings":{
+          "Type" : "AWS::LakeFormation::DataLakeSettings",
+          "Properties" : {
+              "Admins" : [
+                {"DataLakePrincipalIdentifier":{"Fn::GetAtt":["GlueRoleStack", "Outputs.GlueRoleArn"]}},
+                {"DataLakePrincipalIdentifier":{"Fn::GetAtt" : [ "IamStack", "Outputs.dataLakeAdminARN" ]}}
+              ]
+          },
+          "DependsOn":"BucketStack"
+        },
+      "DataLakeResources":{
+        "Type" : "AWS::LakeFormation::Resource",
+        "Properties" : {
+            "ResourceArn" : { "Fn::GetAtt" : [ "BucketStack", "Outputs.FinalBucketARN" ] },
+            "UseServiceLinkedRole": false,
+            "RoleArn": {"Fn::GetAtt":["GlueRoleStack", "Outputs.GlueRoleArn"]}
+          }
+      },
+      "DataLakeAthenaOutputResources":{
+        "Type" : "AWS::LakeFormation::Resource",
+        "Properties" : {
+            "ResourceArn" : { "Fn::GetAtt" : [ "BucketStack", "Outputs.AthenaBucketARN" ] },
+            "UseServiceLinkedRole": false,
+            "RoleArn": {"Fn::GetAtt":["GlueRoleStack", "Outputs.GlueRoleArn"]}
+          }
+      }
+    },
+    "Outputs": {
+      "TestOutput":{
+        "Value": {"Fn::GetAtt" : [ "IamStack", "Outputs.dataLakeAdminARN"] }
+      }
+    }
+  }

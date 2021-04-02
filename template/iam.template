@@ -1,0 +1,286 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "DataLakeBlogTemplate",
+    "Metadata": {
+    },
+    "Parameters": {
+      "AnalystPassword":{
+        "Description" : "Set a temporary password for the data lake analyst account. The user will be asked to change this when they log in. Make sure this complys with any password policy you have configured in your account.",
+        "Type" : "String",
+        "NoEcho": true
+      },
+      "AdminPassword":{
+        "Description" : "Set a temporary password for the data lake admin account. The user will be asked to change this when they log in. Make sure this complys with any password policy you have configured in your account.",
+        "Type" : "String",
+        "NoEcho": true
+      },
+      "GlueRoleArnParam":{
+        "Type":"String",
+        "Description": "ARN of glue role"
+      }
+    },
+    "Mappings": {
+
+    },
+    "Conditions": {
+
+    },
+    "Resources": {
+      "analystGroup": {
+         "Type": "AWS::IAM::Group",
+         "Properties": {
+            "ManagedPolicyArns": [
+              "arn:aws:iam::aws:policy/IAMUserChangePassword"
+            ],
+            "Policies":[
+              {
+                "PolicyName":"DenyGlueToAnalystPolicy",
+                "PolicyDocument":{
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "VisualEditor0",
+                            "Effect": "Deny",
+                            "Action": [
+                                "glue:GetCrawler",
+                                "glue:BatchGetDevEndpoints",
+                                "glue:GetMLTransform",
+                                "glue:UpdateCrawler",
+                                "glue:GetDevEndpoint",
+                                "glue:UpdateTrigger",
+                                "glue:GetTrigger",
+                                "glue:GetJobRun",
+                                "glue:GetJobs",
+                                "glue:DeleteCrawler",
+                                "glue:GetTriggers",
+                                "glue:GetWorkflowRun",
+                                "glue:GetMapping",
+                                "glue:DeleteConnection",
+                                "glue:UseMLTransforms",
+                                "glue:BatchDeleteConnection",
+                                "glue:StartCrawlerSchedule",
+                                "glue:UpdateMLTransform",
+                                "glue:CreateMLTransform",
+                                "glue:StartMLEvaluationTaskRun",
+                                "glue:BatchDeletePartition",
+                                "glue:DeleteTableVersion",
+                                "glue:CreateTrigger",
+                                "glue:CreateUserDefinedFunction",
+                                "glue:StopCrawler",
+                                "glue:StopTrigger",
+                                "glue:DeleteJob",
+                                "glue:GetCatalogImportStatus",
+                                "glue:DeleteDevEndpoint",
+                                "glue:DeleteMLTransform",
+                                "glue:CreateJob",
+                                "glue:ResetJobBookmark",
+                                "glue:CreatePartition",
+                                "glue:UpdatePartition",
+                                "glue:BatchGetPartition",
+                                "glue:ListJobs",
+                                "glue:GetTags",
+                                "glue:StartMLLabelingSetGenerationTaskRun",
+                                "glue:GetDataflowGraph",
+                                "glue:BatchGetCrawlers",
+                                "glue:CreateDatabase",
+                                "glue:BatchDeleteTableVersion",
+                                "glue:GetPlan",
+                                "glue:ListCrawlers",
+                                "glue:GetJobRuns",
+                                "glue:BatchCreatePartition",
+                                "glue:CreateClassifier",
+                                "glue:GetWorkflowRunProperties",
+                                "glue:UpdateTable",
+                                "glue:DeleteTable",
+                                "glue:DeleteWorkflow",
+                                "glue:CreateScript",
+                                "glue:UpdateWorkflow",
+                                "glue:GetUserDefinedFunction",
+                                "glue:StartWorkflowRun",
+                                "glue:StopCrawlerSchedule",
+                                "glue:GetUserDefinedFunctions",
+                                "glue:PutResourcePolicy",
+                                "glue:TagResource",
+                                "glue:ListWorkflows",
+                                "glue:UpdateDatabase",
+                                "glue:CreateTable",
+                                "glue:DeleteResourcePolicy",
+                                "glue:BatchStopJobRun",
+                                "glue:DeleteUserDefinedFunction",
+                                "glue:CreateConnection",
+                                "glue:CreateCrawler",
+                                "glue:DeleteSecurityConfiguration",
+                                "glue:GetDevEndpoints",
+                                "glue:BatchGetWorkflows",
+                                "glue:ListDevEndpoints",
+                                "glue:BatchGetJobs",
+                                "glue:StartJobRun",
+                                "glue:BatchDeleteTable",
+                                "glue:UpdateClassifier",
+                                "glue:CreateWorkflow",
+                                "glue:DeletePartition",
+                                "glue:GetJob",
+                                "glue:GetWorkflow",
+                                "glue:GetCrawlers",
+                                "glue:CreateSecurityConfiguration",
+                                "glue:PutWorkflowRunProperties",
+                                "glue:DeleteDatabase",
+                                "glue:StartTrigger",
+                                "glue:ImportCatalogToGlue",
+                                "glue:PutDataCatalogEncryptionSettings",
+                                "glue:ListMLTransforms",
+                                "glue:StartCrawler",
+                                "glue:UntagResource",
+                                "glue:UpdateJob",
+                                "glue:GetJobBookmark",
+                                "glue:GetMLTransforms",
+                                "glue:StartImportLabelsTaskRun",
+                                "glue:DeleteClassifier",
+                                "glue:StartExportLabelsTaskRun",
+                                "glue:UpdateUserDefinedFunction",
+                                "glue:CancelMLTaskRun",
+                                "glue:GetMLTaskRuns",
+                                "glue:ListTriggers",
+                                "glue:GetMLTaskRun",
+                                "glue:UpdateCrawlerSchedule",
+                                "glue:UpdateConnection",
+                                "glue:BatchGetTriggers",
+                                "glue:CreateDevEndpoint",
+                                "glue:UpdateDevEndpoint",
+                                "glue:GetWorkflowRuns",
+                                "glue:DeleteTrigger",
+                                "glue:GetCrawlerMetrics"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+              },
+              {
+                "PolicyName": "LakeAdminsKeyPolicy",
+      					"PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "keymngmnt",
+                            "Effect": "Allow",
+                            "Action": [
+                                "kms:Decrypt",
+                                "kms:Encrypt",
+                                "kms:GenerateDataKey",
+                                "kms:GenerateDataKeyWithoutPlaintext",
+                                "kms:ReEncryptTo",
+                                "kms:DescribeKey",
+                                "kms:GenerateDataKeyPairWithoutPlaintext",
+                                "kms:GenerateDataKeyPair",
+                                "kms:ReEncryptFrom"
+                            ],
+                            "Resource": {"Fn::Join":["",["arn:aws:kms:*:", {"Ref":"AWS::AccountId"}, ":key/*"]]}
+                        },
+                        {
+                            "Sid": "listkeys",
+                            "Effect": "Allow",
+                            "Action": [
+                              "kms:ListAliases",
+                              "athena:ListWorkGroups"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+              }
+            ]
+         }
+      },
+      "analystUser": {
+         "Type": "AWS::IAM::User",
+         "Properties": {
+           "LoginProfile":{
+             "Password" : {"Ref": "AnalystPassword"},
+             "PasswordResetRequired" : true
+           },
+            "UserName": "analyst@example.com",
+            "Path": "/",
+            "Groups": [ { "Ref" : "analystGroup" } ],
+            "Policies": []
+         }
+      },
+      "analystAccessKey" : {
+         "Type" : "AWS::IAM::AccessKey",
+         "Properties" : {
+            "UserName" : { "Ref" : "analystUser" }
+         }
+      },
+      "adminGroup": {
+         "Type": "AWS::IAM::Group",
+         "Properties": {
+            "ManagedPolicyArns": [
+              "arn:aws:iam::aws:policy/IAMUserChangePassword",
+              "arn:aws:iam::aws:policy/AWSLakeFormationDataAdmin",
+              "arn:aws:iam::aws:policy/AWSGlueConsoleFullAccess",
+              "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+            ]
+         }
+      },
+      "adminUser": {
+         "Type": "AWS::IAM::User",
+         "Properties": {
+           "LoginProfile":{
+             "Password" : {"Ref": "AdminPassword"},
+             "PasswordResetRequired" : true
+           },
+            "UserName": "admin@example.com",
+            "Path": "/",
+            "Groups": [ { "Ref" : "adminGroup" } ],
+            "Policies": [
+              {
+                "PolicyName": "LakeAdminsIamRolePolicy",
+      					"PolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "gluepassrole",
+                            "Effect": "Allow",
+                            "Action": [
+                                "iam:PassRole",
+                                "iam:PutRolePolicy"
+                            ],
+                            "Resource": [
+                              {"Ref": "GlueRoleArnParam"},
+                              {"Fn::Join":["",["arn:aws:iam::", {"Ref":"AWS::AccountId"}, ":role/aws-service-role/lakeformation.amazonaws.com/AWSServiceRoleForLakeFormationDataAccess"]]}
+                            ]
+                        },
+                        {
+                            "Sid": "lakeadmin",
+                            "Effect": "Allow",
+                            "Action": [
+                                "lakeformation:*"
+                            ],
+                            "Resource": "*"
+                        }
+                    ]
+                }
+              }
+             ]
+         }
+      }
+    },
+    "Outputs": {
+      "dataLakeAdminARN" : {
+        "Description" : "The ARN of the Admin-Role",
+        "Value" : { "Fn::GetAtt" : ["adminUser", "Arn"] }
+      },
+      "dataLakeAnalystARN" : {
+        "Description" : "The ARN of the Analyst-Role",
+        "Value" : { "Fn::GetAtt" : ["analystUser", "Arn"] }
+      },
+      "analystUserAccessKey" : {
+         "Value" : { "Ref" : "analystAccessKey" }
+      },
+      "analystUserSecretKey" : {
+         "Value" : {
+            "Fn::GetAtt" : [ "analystAccessKey", "SecretAccessKey" ]
+         }
+      }
+    }
+}

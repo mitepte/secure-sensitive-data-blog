@@ -1,0 +1,190 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Glue Role Template",
+    "Metadata": {
+
+    },
+    "Parameters": {
+      "BucketNameParam" : {
+        "Type" : "String",
+        "AllowedPattern": "[a-z0-9]+",
+        "ConstraintDescription": "Lowercase letters and numbers only!",
+        "Description" : "Enter a bucket name, must only include letters and numbers"
+      },
+      "BlogCodeBucketNameParam" : {
+        "Type" : "String",
+        "Description" : "Enter a bucket name where the code artifacts are uploaded"
+      }
+    },
+    "Mappings": {
+      "RegionMap":{
+        "us-east-2": {"name": "ohio"},
+        "us-east-1": {"name": "virginia"},
+        "us-west-1": {"name":"cali"},
+        "us-west-2": {"name":"oregon"},
+        "ap-northeast-2": {"name": "seoul"},
+        "ap-southeast-1": {"name": "singapore"},
+        "ap-southeast-2": {"name":"sydney"},
+        "ap-northeast-1": {"name":"tokyo"},
+        "eu-central-1": {"name": "frankfurt"},
+        "eu-west-1": {"name":"ireland"},
+        "eu-west-2": {"name":"london"}
+      }
+    },
+    "Conditions": {
+
+    },
+    "Resources": {
+      "myGlueRole": {
+        "Type": "AWS::IAM::Role",
+        "Properties": {
+          "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [{
+              "Effect": "Allow",
+              "Principal": {
+                "Service": ["glue.amazonaws.com", "lakeformation.amazonaws.com"]
+              },
+              "Action": ["sts:AssumeRole"]
+            }]
+          },
+          "Policies": [
+            {
+              "PolicyName": "UpdatedTwoCustomGluePolicy",
+    					"PolicyDocument": {
+                "Version": "2012-10-17",
+                "Statement": [
+                  {
+                    "Sid": "VisualEditor0",
+                    "Effect": "Allow",
+                    "Action": [
+                        "ec2:DeleteTags",
+                        "ec2:CreateTags"
+                    ],
+                    "Resource": [
+                        "arn:aws:ec2:*:*:instance/*",
+                        "arn:aws:ec2:*:*:security-group/*",
+                        "arn:aws:ec2:*:*:network-interface/*"
+                    ],
+                    "Condition": {
+                        "ForAllValues:StringEquals": {
+                            "aws:TagKeys": "aws-glue-service-resource"
+                        }
+                    }
+                },
+                  {
+                    "Sid": "VisualEditor1main",
+                    "Effect": "Allow",
+                    "Action": [
+                        "logs:CreateLogStream",
+                        "kms:Decrypt",
+                        "kms:Encrypt",
+                        "kms:GenerateDataKey",
+                        "s3:CreateBucket",
+                        "logs:AssociateKmsKey",
+                        "logs:PutLogEvents"
+                    ],
+                    "Resource": [
+                        "arn:aws:s3:::aws-glue-*",
+                        {"Fn::Join":["", ["arn:aws:kms:*:", { "Ref" : "AWS::AccountId" },":key/*"]]},
+                        "arn:aws:logs:*:*:/aws-glue/*"
+                    ]
+                },
+                {
+                    "Sid": "VisualEditor2main",
+                    "Effect": "Allow",
+                    "Action": [
+                        "iam:GetRole",
+                        "cloudwatch:PutMetricData",
+                        "ec2:DeleteNetworkInterface",
+                        "s3:ListBucket",
+                        "s3:GetBucketAcl",
+                        "ec2:DescribeVpcAttribute",
+                        "ec2:DescribeSecurityGroups",
+                        "glue:*",
+                        "ec2:CreateNetworkInterface",
+                        "s3:ListAllMyBuckets",
+                        "ec2:DescribeNetworkInterfaces",
+                        "ec2:DescribeVpcEndpoints",
+                        "ec2:DescribeSubnets",
+                        "iam:ListRolePolicies",
+                        "s3:GetBucketLocation",
+                        "ec2:DescribeRouteTables",
+                        "iam:GetRolePolicy"
+                    ],
+                    "Resource": "*"
+                },
+                {
+                  "Sid":"CreateCapabilities",
+                  "Effect":"Allow",
+                  "Action":[
+                    "s3:PutObject",
+                    "s3:GetObject",
+                    "s3:DeleteObject"
+                  ],
+                  "Resource":[
+                    "arn:aws:s3:::crawler-public*",
+                    "arn:aws:s3:::aws-glue-*",
+                    "arn:aws:s3:::secure.glue.*",
+                    "arn:aws:s3:::aws-glue-*/*",
+                    "arn:aws:s3:::*/*aws-glue-*/*",
+                    { "Fn::Join": [ "", ["arn:aws:s3:::", { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BucketNameParam" } ]] },
+                    { "Fn::Join": [ "", ["arn:aws:s3:::", { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BucketNameParam" },"/*" ]] },
+                    { "Fn::Join": [ "", ["arn:aws:s3:::", { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BlogCodeBucketNameParam" } ]] },
+                    { "Fn::Join": [ "", ["arn:aws:s3:::", { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BlogCodeBucketNameParam" },"/*" ]] }
+                  ]
+                },
+                {
+                    "Sid": "VisualEditor1",
+                    "Effect": "Allow",
+                    "Action": [
+                      "s3:HeadBucket",
+                      "kms:ListKeys",
+                      "lakeformation:GetDataAccess"
+                    ],
+                    "Resource": "*"
+                },
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "logs:CreateLogGroup",
+                        "logs:CreateLogStream",
+                        "logs:PutLogEvents",
+                        "logs:AssociateKmsKey"
+                    ],
+                    "Resource": [
+                        "arn:aws:logs:*:*:/aws-glue/*"
+                    ]
+                },
+                {
+                    "Sid": "VisualEditor5",
+                    "Effect": "Allow",
+                    "Action": "logs:CreateLogGroup",
+                    "Resource": "arn:aws:logs:*:*:/aws-glue/*"
+                },
+                {
+                  "Sid":"KMSStuff",
+                  "Effect":"Allow",
+                  "Action":[
+                    "kms:Decrypt",
+                    "kms:Encrypt",
+                    "kms:ReEncrypt*",
+                    "kms:Describe*",
+                    "kms:GenerateDataKey*",
+                    "kms:GetKeyPolicy"
+                  ],
+                  "Resource":"*"
+                }
+              ]
+              }
+            }
+          ]
+        }
+      }
+    },
+    "Outputs": {
+      "GlueRoleArn":{
+        "Value": {"Fn::GetAtt" : ["myGlueRole", "Arn"] }
+      }
+    }
+}

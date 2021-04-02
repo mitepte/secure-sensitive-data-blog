@@ -1,0 +1,47 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Athena configuration",
+    "Metadata": {
+
+    },
+    "Parameters": {
+      "KMSKeyArn":{
+        "Type":"String"
+      },
+      "AthenaBucketName":{
+        "Type":"String"
+      }
+    },
+    "Mappings": {
+
+    },
+    "Conditions": {
+
+    },
+    "Resources": {
+      "AthenaWorkGroup":{
+        "Type" : "AWS::Athena::WorkGroup",
+        "Properties" : {
+            "Description" : "A workgroup for analysts",
+            "Name" : "AnalystGroup",
+            "RecursiveDeleteOption" : true,
+            "State" : "ENABLED",
+            "WorkGroupConfiguration" : {
+              "EnforceWorkGroupConfiguration" : true,
+              "PublishCloudWatchMetricsEnabled" : true,
+              "RequesterPaysEnabled" : false,
+              "ResultConfiguration" : {
+                "EncryptionConfiguration" : {
+                  "EncryptionOption" : "SSE_KMS",
+                  "KmsKey" : {"Ref":"KMSKeyArn"}
+                },
+                "OutputLocation" : {"Fn::Join":["", ["s3://", {"Ref":"AthenaBucketName"}]]}
+              }
+            }
+          }
+      }
+    },
+    "Outputs": {
+
+    }
+}

@@ -1,0 +1,177 @@
+{
+    "AWSTemplateFormatVersion": "2010-09-09",
+    "Description": "Glue Configuration",
+    "Metadata": {
+
+    },
+    "Parameters": {
+      "KMSKeyParam":{
+        "Type":"String",
+        "Description":"KMS Key"
+      },
+      "BucketNameParam":{
+        "Type":"String",
+        "Description":"BucketName"
+      },
+      "GlueRoleArnParam":{
+        "Type":"String",
+        "Description": "ARN of glue role"
+      },
+      "BlogCodes3Location":{
+        "Type":"String",
+        "Description":"Blog Code S3 Location"
+      }
+    },
+    "Mappings": {
+      "RegionMap":{
+        "us-east-2": {"name": "ohio"},
+        "us-east-1": {"name": "virginia"},
+        "us-west-1": {"name":"cali"},
+        "us-west-2": {"name":"oregon"},
+        "ap-northeast-2": {"name": "seoul"},
+        "ap-southeast-1": {"name": "singapore"},
+        "ap-southeast-2": {"name":"sydney"},
+        "ap-northeast-1": {"name":"tokyo"},
+        "eu-central-1": {"name": "frankfurt"},
+        "eu-west-1": {"name":"ireland"},
+        "eu-west-2": {"name":"london"}
+      }
+    },
+    "Conditions": {
+
+    },
+    "Resources": {
+      "GlueDatabase":{
+        "Type" : "AWS::Glue::Database",
+        "Properties" : {
+            "CatalogId" : {"Ref":"AWS::AccountId"},
+            "DatabaseInput" : {
+              "Description" : "This datalake db1",
+              "Name" : "db1"
+            }
+          }
+      },
+      "GlueEncryption":{
+        "Type" : "AWS::Glue::SecurityConfiguration",
+        "Properties" : {
+            "EncryptionConfiguration" : {
+              "CloudWatchEncryption" : {
+                "CloudWatchEncryptionMode" : "SSE-KMS",
+                "KmsKeyArn" : {"Ref" : "KMSKeyParam"}
+              },
+              "JobBookmarksEncryption" :{
+                "JobBookmarksEncryptionMode" : "CSE-KMS",
+                "KmsKeyArn" : {"Ref" : "KMSKeyParam"}
+              },
+              "S3Encryptions" : [{
+                "KmsKeyArn" : {"Ref" : "KMSKeyParam"},
+                "S3EncryptionMode" : "SSE-KMS"
+              }]
+            },
+            "Name" : "db1-securityconfig"
+          }
+      },
+      "GlueCustomerCrawler":{
+        "Type" : "AWS::Glue::Crawler",
+        "Properties" : {
+            "CrawlerSecurityConfiguration" : {"Ref": "GlueEncryption"},
+            "DatabaseName" : {"Ref": "GlueDatabase"},
+            "Description" : "My db1 crawler for customers table",
+            "Name" : "customers-crawler",
+            "Role" : {"Ref": "GlueRoleArnParam"},
+            "Targets" : {
+              "S3Targets" : [{"Path":{"Fn::Join":["", ["s3://",{ "Fn::Join": [ "", [ { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BucketNameParam" } ]] }, "/customers" ]]}}]
+            }
+          }
+      },
+      "GlueCardsCrawler":{
+        "Type" : "AWS::Glue::Crawler",
+        "Properties" : {
+            "CrawlerSecurityConfiguration" : {"Ref": "GlueEncryption"},
+            "DatabaseName" : {"Ref": "GlueDatabase"},
+            "Description" : "My db1 credit card data crawler",
+            "Name" : "cards-crawler",
+            "Role" : {"Ref": "GlueRoleArnParam"},
+            "Targets" : {
+              "S3Targets" : [{"Path":{"Fn::Join":["", ["s3://",{ "Fn::Join": [ "", [ { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BucketNameParam" } ]] }, "/cards"]]}}]
+            }
+          }
+      },
+      "GlueStoreSalesCrawler":{
+        "Type" : "AWS::Glue::Crawler",
+        "Properties" : {
+            "CrawlerSecurityConfiguration" : {"Ref": "GlueEncryption"},
+            "DatabaseName" : {"Ref": "GlueDatabase"},
+            "Description" : "My db1 stores sales crawler",
+            "Name" : "sales-crawler",
+            "Role" : {"Ref": "GlueRoleArnParam"},
+            "Targets" : {
+              "S3Targets" : [{"Path":{"Fn::Join":["", ["s3://",{ "Fn::Join": [ "", [ { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BucketNameParam" } ]] }, "/sales"]]}}]
+            }
+          }
+      },
+      "GlueCleanCardsCrawler":{
+        "Type" : "AWS::Glue::Crawler",
+        "Properties" : {
+            "CrawlerSecurityConfiguration" : {"Ref": "GlueEncryption"},
+            "DatabaseName" : {"Ref": "GlueDatabase"},
+            "Description" : "My db1 clean cards crawler",
+            "Name" : "clean-cards-crawler",
+            "Role" : {"Ref": "GlueRoleArnParam"},
+            "Targets" : {
+              "S3Targets" : [{"Path":{"Fn::Join":["", ["s3://",{ "Fn::Join": [ "", [ { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BucketNameParam" } ]] }, "/clean_cards"]]}}]
+            }
+          }
+      },
+      "GlueCleanSalesCrawler":{
+        "Type" : "AWS::Glue::Crawler",
+        "Properties" : {
+            "CrawlerSecurityConfiguration" : {"Ref": "GlueEncryption"},
+            "DatabaseName" : {"Ref": "GlueDatabase"},
+            "Description" : "My db1 clean sales crawler",
+            "Name" : "clean-sales-crawler",
+            "Role" : {"Ref": "GlueRoleArnParam"},
+            "Targets" : {
+              "S3Targets" : [{"Path":{"Fn::Join":["", ["s3://",{ "Fn::Join": [ "", [ { "Ref" : "AWS::AccountId" },  { "Fn::FindInMap" : [ "RegionMap", { "Ref" : "AWS::Region" }, "name"]}, { "Ref" : "BucketNameParam" } ]] }, "/clean_sales"]]}}]
+            }
+       }
+    },
+    "CleanCardsJob": {
+      "Type": "AWS::Glue::Job",
+      "Properties": {
+        "Command": {
+          "Name": "glueetl",
+          "ScriptLocation": {"Fn::Join":["", ["s3://", {"Ref":"BlogCodes3Location"}, "/clean-cards-data-glue-job.py"] ] }
+        },
+        "ExecutionProperty": {
+          "MaxConcurrentRuns": 1
+        },
+        "MaxRetries": 0,
+        "GlueVersion": "2.0",
+        "Name": "clean_cards_data",
+        "Role": {"Ref": "GlueRoleArnParam"},
+	"SecurityConfiguration": {"Ref": "GlueEncryption"}
+      }
+    },
+    "CleanSalesJob": {
+      "Type": "AWS::Glue::Job",
+      "Properties": {
+        "Command": {
+          "Name": "glueetl",
+          "ScriptLocation": {"Fn::Join":["", ["s3://", {"Ref":"BlogCodes3Location"}, "/clean-sales-data-glue-job.py"] ] }
+        },
+        "ExecutionProperty": {
+          "MaxConcurrentRuns": 1
+        },
+        "MaxRetries": 0,
+        "GlueVersion": "2.0",
+        "Name": "clean_sales_data",
+        "Role": {"Ref": "GlueRoleArnParam"},
+	"SecurityConfiguration": {"Ref": "GlueEncryption"}
+      }
+    }
+  },
+  "Outputs": {
+
+  }
+}
